@@ -1,0 +1,11 @@
+# 打包产物与本地垃圾
+dist/
+node_modules/
+*.log
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
