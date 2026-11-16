@@ -59,9 +59,11 @@ powershell -File .\build.ps1
    - 直链：`https://github.com/sonruozimu/mbcc-console-wallpaper/releases/download/v0.2.0/dsh-theme-mbcc-console-ext-0.2.0.tgz`
    - 用直链装：`dsh plugin add https://github.com/sonruozimu/mbcc-console-wallpaper/releases/download/v0.2.0/dsh-theme-mbcc-console-ext-0.2.0.tgz`
    - 市场优先用 npm 包，其次用 Release 预构建 tarball，最后才回退整仓源码下载 —— 所以附上 tgz 安装最快。
-3. **剩下的只有这一步**：到 https://github.com/awesome-dsh-plugin/awesome-dsh-plugin 提 PR，在插件清单里加一条（名字、仓库地址、一句话中英文描述、分类），指向上面的仓库或 Release。
+3. ~~提 PR 收录~~ ✅ 已完成：https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/15806 （2026-11-16，CI 全绿、可合并）
+   - 条目文件：`data/plugins/sonruozimu__mbcc-console-wallpaper.yml`（`category: theme` + 钉住 v0.2.0 的 `tarball`）
+   - 后续改版只需改这个 yml（或不动），**不要**手改那份生成出来的 README
    - **不要**往 `dsh-market/dsh-market` 仓库提插件条目，那个仓库是市场应用本身，PR 会被拒。
-4. 合并后市场与目录站会在一天内自动收录。
+4. 合并后市场与目录站会在一天内自动收录；`theme` 分类会进 dsh-market 的「主题」Tab。
 
 可选：发布到 npm，市场就能按包名装（`npm publish`，`files` 已限定只发 7 个文件）。
 
