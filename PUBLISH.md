@@ -8,7 +8,9 @@
 
 ## 一、本地保存
 
-构建产物（都在 `dist/`）：
+代码仓库：https://github.com/sonruozimu/mbcc-console-wallpaper
+
+构建产物（都在 `dist/`，不进仓库，见 `.gitignore`）：
 
 | 文件 | 用途 |
 | --- | --- |
@@ -52,11 +54,12 @@ powershell -File .\build.ps1
 
 步骤：
 
-1. 把本包推到一个公开 GitHub 仓库（例如 `https://github.com/<你>/dsh-theme-mbcc-console-ext`），根目录就是本包内容。
-2. 打一个 tag 并发布 Release，把 `dist\dsh-theme-mbcc-console-ext-0.2.0.tgz` 作为 Release 附件传上去。
-   - Release 直链形如：`https://github.com/<你>/dsh-theme-mbcc-console-ext/releases/download/v0.2.0/dsh-theme-mbcc-console-ext-0.2.0.tgz`
+1. ~~把本包推到一个公开 GitHub 仓库~~ ✅ 已完成：https://github.com/sonruozimu/mbcc-console-wallpaper （`main` 分支根目录就是本包内容）
+2. ~~打 tag 并发布 Release，把 tgz 作为附件传上去~~ ✅ 已完成：https://github.com/sonruozimu/mbcc-console-wallpaper/releases/tag/v0.2.0
+   - 直链：`https://github.com/sonruozimu/mbcc-console-wallpaper/releases/download/v0.2.0/dsh-theme-mbcc-console-ext-0.2.0.tgz`
+   - 用直链装：`dsh plugin add https://github.com/sonruozimu/mbcc-console-wallpaper/releases/download/v0.2.0/dsh-theme-mbcc-console-ext-0.2.0.tgz`
    - 市场优先用 npm 包，其次用 Release 预构建 tarball，最后才回退整仓源码下载 —— 所以附上 tgz 安装最快。
-3. 到 https://github.com/awesome-dsh-plugin/awesome-dsh-plugin 提 PR，在插件清单里加一条（名字、仓库地址、一句话中英文描述、分类），指向你的仓库或 Release。
+3. **剩下的只有这一步**：到 https://github.com/awesome-dsh-plugin/awesome-dsh-plugin 提 PR，在插件清单里加一条（名字、仓库地址、一句话中英文描述、分类），指向上面的仓库或 Release。
    - **不要**往 `dsh-market/dsh-market` 仓库提插件条目，那个仓库是市场应用本身，PR 会被拒。
 4. 合并后市场与目录站会在一天内自动收录。
 

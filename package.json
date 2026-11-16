@@ -3,6 +3,15 @@
   "version": "0.2.0",
   "description": "MBCC console theme for DSH with an opening-video boot sequence and a local wallpaper library (upload, slideshow, opacity, page themes).",
   "license": "MIT",
+  "author": "sonruozimu",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sonruozimu/mbcc-console-wallpaper.git"
+  },
+  "homepage": "https://github.com/sonruozimu/mbcc-console-wallpaper#readme",
+  "bugs": {
+    "url": "https://github.com/sonruozimu/mbcc-console-wallpaper/issues"
+  },
   "type": "commonjs",
   "main": "index.js",
   "exports": {
