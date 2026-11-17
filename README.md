@@ -38,7 +38,7 @@ A theme extension for DeepSeek Harness: a skippable opening video plus a local w
 ## 安装
 
 ```powershell
-dsh plugin add C:\path\to\dsh-theme-mbcc-console-ext-0.2.0.tgz
+dsh plugin add C:\path\to\dsh-theme-mbcc-console-ext-0.2.1.tgz
 ```
 
 或在插件市场里选「从压缩包/链接安装」，或在源码目录下 `dsh plugin add .`。

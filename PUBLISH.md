@@ -1,6 +1,6 @@
 # 分发与上架说明
 
-包名：`dsh-theme-mbcc-console-ext`　版本：`0.2.0`
+包名：`dsh-theme-mbcc-console-ext`　版本：`0.2.1`
 
 功能：MBCC 控制台主题 + 开屏视频（opening.mp4 → MBCC 自检日志）+ 左侧栏底部「本地壁纸库」（上传本地图片、幻灯片、透明度、页面主题）。主题 1 = 原主题，主题 2 = 内置 CG。
 
@@ -14,8 +14,8 @@
 
 | 文件 | 用途 |
 | --- | --- |
-| `dsh-theme-mbcc-console-ext-0.2.0.tgz` | 标准插件包，可直接安装 / 上传 Release / 发 npm |
-| `dsh-theme-mbcc-console-ext-0.2.0.zip` | 同内容压缩包，方便存档、发给别人解压查看 |
+| `dsh-theme-mbcc-console-ext-0.2.1.tgz` | 标准插件包，可直接安装 / 上传 Release / 发 npm |
+| `dsh-theme-mbcc-console-ext-0.2.1.zip` | 同内容压缩包，方便存档、发给别人解压查看 |
 
 源码目录 `mbcc-console-wallpaper/` 本身就是可安装的 bundle（`package.json` 里的 `dsh.bundle.patch` + `dsh.client` 已就位）。
 
@@ -33,7 +33,7 @@ powershell -File .\build.ps1
 1. **命令行**（推荐给会用终端的）：
 
    ```powershell
-   dsh plugin add C:\path\to\dsh-theme-mbcc-console-ext-0.2.0.tgz
+   dsh plugin add C:\path\to\dsh-theme-mbcc-console-ext-0.2.1.tgz
    ```
 
 2. **插件市场 → 从压缩包/链接安装**：把 tgz 拖进去，或填它的 URL（例如 GitHub Release 的下载地址）。
@@ -55,12 +55,12 @@ powershell -File .\build.ps1
 步骤：
 
 1. ~~把本包推到一个公开 GitHub 仓库~~ ✅ 已完成：https://github.com/sonruozimu/mbcc-console-wallpaper （`main` 分支根目录就是本包内容）
-2. ~~打 tag 并发布 Release，把 tgz 作为附件传上去~~ ✅ 已完成：https://github.com/sonruozimu/mbcc-console-wallpaper/releases/tag/v0.2.0
-   - 直链：`https://github.com/sonruozimu/mbcc-console-wallpaper/releases/download/v0.2.0/dsh-theme-mbcc-console-ext-0.2.0.tgz`
-   - 用直链装：`dsh plugin add https://github.com/sonruozimu/mbcc-console-wallpaper/releases/download/v0.2.0/dsh-theme-mbcc-console-ext-0.2.0.tgz`
+2. ~~打 tag 并发布 Release，把 tgz 作为附件传上去~~ ✅ 已完成：https://github.com/sonruozimu/mbcc-console-wallpaper/releases/tag/v0.2.1
+   - 直链：`https://github.com/sonruozimu/mbcc-console-wallpaper/releases/download/v0.2.1/dsh-theme-mbcc-console-ext-0.2.1.tgz`
+   - 用直链装：`dsh plugin add https://github.com/sonruozimu/mbcc-console-wallpaper/releases/download/v0.2.1/dsh-theme-mbcc-console-ext-0.2.1.tgz`
    - 市场优先用 npm 包，其次用 Release 预构建 tarball，最后才回退整仓源码下载 —— 所以附上 tgz 安装最快。
 3. ~~提 PR 收录~~ ✅ 已完成：https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/15806 （2026-11-16，CI 全绿、可合并）
-   - 条目文件：`data/plugins/sonruozimu__mbcc-console-wallpaper.yml`（`category: theme` + 钉住 v0.2.0 的 `tarball`）
+   - 条目文件：`data/plugins/sonruozimu__mbcc-console-wallpaper.yml`（`category: theme` + 钉住 v0.2.1 的 `tarball`）
    - 后续改版只需改这个 yml（或不动），**不要**手改那份生成出来的 README
    - **不要**往 `dsh-market/dsh-market` 仓库提插件条目，那个仓库是市场应用本身，PR 会被拒。
 4. 合并后市场与目录站会在一天内自动收录；`theme` 分类会进 dsh-market 的「主题」Tab。
@@ -88,8 +88,8 @@ package/assets/opening.mp4  package/assets/theme2.webp
 收到 tgz 后可先自查：
 
 ```powershell
-tar -tzf .\dsh-theme-mbcc-console-ext-0.2.0.tgz
-Get-FileHash .\dsh-theme-mbcc-console-ext-0.2.0.tgz -Algorithm SHA256
+tar -tzf .\dsh-theme-mbcc-console-ext-0.2.1.tgz
+Get-FileHash .\dsh-theme-mbcc-console-ext-0.2.1.tgz -Algorithm SHA256
 ```
 
 安装后自检：
