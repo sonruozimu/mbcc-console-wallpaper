@@ -1,6 +1,6 @@
 {
   "name": "dsh-theme-mbcc-console-ext",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "MBCC console theme for DSH with an opening-video boot sequence and a local wallpaper library (upload, slideshow, opacity, page themes).",
   "license": "MIT",
   "author": "sonruozimu",

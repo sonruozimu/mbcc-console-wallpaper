@@ -18,6 +18,9 @@ const fs = require('node:fs');
 const NAME = 'dsh-theme-mbcc-console-ext';
 const ROUTE_BASE = '/mbcc-console-wall/assets/';
 const ASSET_ROOT = path.join(__dirname, 'assets');
+/** 开屏诊断流水：客户端每个阶段回传一行 JSON，控制台打不开也能查 */
+const DIAG_PATH = '/mbcc-console-wall/diag';
+const DIAG_FILE = path.join(__dirname, 'diag.jsonl');
 
 const MIME = {
   '.mp4': 'video/mp4',
@@ -122,6 +125,42 @@ function assetHandler(rel) {
   };
 }
 
+/**
+ * 诊断端点：客户端用 navigator.sendBeacon 把开屏各阶段状态 POST 过来，
+ * 追加写入包目录下的 diag.jsonl。只收 JSON、限 64KB，出错一律吞掉不影响页面。
+ */
+function diagHandler(req, res) {
+  if (req.method !== 'POST') {
+    res.writeHead(405, { allow: 'POST', 'content-type': 'text/plain; charset=utf-8' });
+    res.end('method not allowed');
+    return;
+  }
+  let size = 0;
+  const chunks = [];
+  req.on('data', (chunk) => {
+    size += chunk.length;
+    if (size > 65536) {
+      req.destroy();
+      return;
+    }
+    chunks.push(chunk);
+  });
+  req.on('end', () => {
+    try {
+      const text = Buffer.concat(chunks).toString('utf8').trim();
+      if (text) fs.appendFileSync(DIAG_FILE, text + '\n', 'utf8');
+      sendJson(res, 200, { ok: true });
+    } catch (e) {
+      sendJson(res, 500, { ok: false, error: String(e && e.message) });
+    }
+  });
+  req.on('error', () => {
+    try {
+      res.destroy();
+    } catch (e) {}
+  });
+}
+
 function apply(ctx) {
   // webServer 可能比本插件晚就绪：inject 等它，注册随上下文一起释放。
   if (typeof ctx.inject !== 'function') return;
@@ -139,7 +178,8 @@ function apply(ctx) {
       add('opening.mp4', assetHandler('opening.mp4'));
       add('theme2.webp', assetHandler('theme2.webp'));
       // 诊断端点：确认宿主半部确实挂上了（浏览器控制台 / curl 可用）
-      add('ping.json', (req, res) => sendJson(res, 200, { ok: true, build: 'mbcc-console/52-wall', files: blobs.size }));
+      add('ping.json', (req, res) => sendJson(res, 200, { ok: true, build: 'mbcc-console/54-adaptive', files: blobs.size }));
+      disposers.push(webCtx.webServer.register({ kind: 'exact', path: DIAG_PATH, handler: diagHandler }));
       return () => {
         for (const dispose of disposers) {
           try {

@@ -26,7 +26,7 @@ window.__ModuleLoader__.load({
      * 构建标记：改 client.js 时一起改这里。
      * 只靠 boolean 会把 HMR 换进来的新版本挡在门外，页面永远停在旧 CSS。
      */
-    const BUILD = 'mbcc-console/53-video';
+    const BUILD = 'mbcc-console/54-adaptive';
 
     /**
      * 调色板。分组与内置 design-platform.css 对齐。
@@ -1216,7 +1216,8 @@ body[data-mbcc-fx='off'] #mbcc-signal { display: none !important; }
 #mbcc-boot {
   position: fixed;
   inset: 0;
-  z-index: 2147483200;
+  /* 新版外壳自带启动遮罩：开屏必须压在它上面，否则会被盖住看不见 */
+  z-index: 2147483645;
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -1402,7 +1403,7 @@ body[data-mbcc-fx='off'] #mbcc-signal { display: none !important; }
     const THEME_VERSION = '0.51';
     const SETTINGS_KEY = 'mbcc-theme-settings';
     /** 设置结构版本：升级到带开屏视频的构建时，一次性重置「开屏/视频」开关，保证新开屏至少播出一次 */
-    const SETTINGS_VERSION = 53;
+    const SETTINGS_VERSION = 54;
     const DEFAULT_SETTINGS = { boot: true, grid: true, pill: true, fx: true, sfx: false, roundFont: false, accent: 'red', threshold: 5, bootVersion: SETTINGS_VERSION };
 
     function loadSettings() {
@@ -1459,8 +1460,48 @@ body[data-mbcc-fx='off'] #mbcc-signal { display: none !important; }
       } catch (e) {}
     }
 
-    /** 一次构建只播一次；构建号变化（插件升级）自动重播一次，方便验证新开屏 */
+    /**
+     * 开屏节流：只在「本页面生命周期」里记账，不再用 sessionStorage 做「播过就不播」。
+     *
+     * 旧实现把已播标记写进 sessionStorage，而 sessionStorage 跟着标签页一直活着：
+     * 插件升级、DSH 升级、刷新页面之后标记还在，于是开屏被永久拦住 —— 这正是
+     * 「更新到新版本后开屏动画不加载」的根因。现在只要页面重新加载就一定播一次。
+     */
     const BOOT_FLAG = 'mbcc-boot:' + BUILD;
+
+    /** 开屏诊断回传：各阶段状态发给宿主半部（写 diag.jsonl），控制台打不开也能查 */
+    function reportBoot(payload) {
+      try {
+        const body = JSON.stringify(
+          Object.assign(
+            {
+              at: new Date().toISOString(),
+              build: BUILD,
+              href: String(location.href || '').slice(0, 200),
+              stage: window.__mbccBootStage || '',
+              settingsBoot: (window.__mbccSettings || {}).boot,
+              wallVideo: (window.__mbccWallSettings || {}).video,
+              shellWait: typeof window.__mbccBootShellWait === 'number' ? window.__mbccBootShellWait : -2,
+            },
+            payload || {},
+          ),
+        );
+        const url = '/mbcc-console-wall/diag';
+        if (navigator.sendBeacon) {
+          navigator.sendBeacon(url, new Blob([body], { type: 'application/json' }));
+        } else if (window.fetch) {
+          window
+            .fetch(url, {
+              method: 'POST',
+              body,
+              keepalive: true,
+              headers: { 'content-type': 'application/json' },
+              credentials: 'same-origin',
+            })
+            .catch(() => {});
+        }
+      } catch (e) {}
+    }
 
     function bootMarkDone() {
       try {
@@ -1470,10 +1511,66 @@ body[data-mbcc-fx='off'] #mbcc-signal { display: none !important; }
       }
     }
 
+    /** 主界面锚点：外壳（sidebar/center 列）挂载后这些选择器才会出现 */
+    const SHELL_HINTS = [
+      '[class*="_sidebarCol"]',
+      '[class*="_centerCol"]',
+      '[data-conversation-region]',
+      '[data-phase]',
+      '[class*="sidebar" i]',
+      '[data-slot]',
+    ];
+
+    function shellMounted() {
+      for (let i = 0; i < SHELL_HINTS.length; i++) {
+        try {
+          if (document.querySelector(SHELL_HINTS[i])) return true;
+        } catch (e) {}
+      }
+      return false;
+    }
+
+    /** 宿主自己的启动遮罩通常是模态层：它在的时候开屏会被 top-layer 盖住 */
+    function hostSplashOpen() {
+      try {
+        return !!document.querySelector('dialog[open]');
+      } catch (e) {
+        return false;
+      }
+    }
+
+    /**
+     * 等主界面出现再放开屏。
+     * 新版外壳启动更慢、且自己有一层启动遮罩：插件是 immediately 加载的，
+     * 如果照旧在 apply 时立刻播，视频会在白屏后面播完，用户看到的就是「开屏没了」。
+     * 最多等 15s，超时也播——宁可早一点也不吞掉。
+     */
+    function scheduleBoot() {
+      if (window.__mbccBootScheduled) return;
+      window.__mbccBootScheduled = true;
+      const started = Date.now();
+      const poll = window.setInterval(() => {
+        const waited = Date.now() - started;
+        if (shellMounted() && !hostSplashOpen()) {
+          window.clearInterval(poll);
+          window.__mbccBootShellWait = waited;
+          window.setTimeout(() => playBoot(), 120);
+          return;
+        }
+        if (waited > 15000) {
+          window.clearInterval(poll);
+          window.__mbccBootShellWait = -1;
+          playBoot();
+        }
+      }, 120);
+    }
+
     function playBoot(force) {
       try {
         if (typeof window === 'undefined' || !document.documentElement) return;
         if (window.__mbccBootRunning) return;
+        // 同一页面只自动播一次（主题热重载会再次 apply，但不该重播）
+        if (!force && window.__mbccBootPlayedForPage) return;
         // 开屏视频是用户自己要求装的开场动画，不受系统「减少动态效果」影响；
         // 只有纯装饰动效（故障抖动等）才尊重该偏好。
         if (!force && window.__mbccSettings && window.__mbccSettings.boot === false) return;
@@ -1481,14 +1578,15 @@ body[data-mbcc-fx='off'] #mbcc-signal { display: none !important; }
           try { window.sessionStorage.removeItem(BOOT_FLAG); } catch (e) {}
           window.__mbccVideoFailed = false;
           window.__mbccLastVideoError = '';
-        } else {
-          try {
-            if (window.sessionStorage.getItem(BOOT_FLAG) === '1') return;
-          } catch (e) {
-            // 隐私模式 / 存储被禁：照常播一次
-          }
         }
+        window.__mbccBootPlayedForPage = true;
         window.__mbccBootRunning = true;
+
+        // 旧主题（dsh-theme-mbcc-console）或上一次开屏可能在 DOM 里留了同 id 的层，先清掉
+        try {
+          const stale = document.getElementById('mbcc-boot');
+          if (stale && stale.parentNode) stale.parentNode.removeChild(stale);
+        } catch (e) {}
 
         const host = document.createElement('div');
         host.id = 'mbcc-boot';
@@ -1503,17 +1601,34 @@ body[data-mbcc-fx='off'] #mbcc-signal { display: none !important; }
         const corner = corners[Math.floor(Math.random() * corners.length)];
         host.style.setProperty('--bc-x', corner[0]);
         host.style.setProperty('--bc-y', corner[1]);
-        document.documentElement.appendChild(host);
-        requestAnimationFrame(() => host.classList.add('on'));
-
         let closed = false;
         let timer = 0;
+        let remount = 0;
+        /** 挂到 body（拿不到就挂 html）；新版本外壳重渲染时可能把 overlay 摘掉，所以要能补挂 */
+        const mount = () => {
+          try {
+            const parent = document.body || document.documentElement;
+            if (parent && !host.isConnected) parent.appendChild(host);
+          } catch (e) {}
+        };
+        mount();
+        requestAnimationFrame(() => host.classList.add('on'));
+        remount = window.setInterval(() => {
+          if (closed) {
+            window.clearInterval(remount);
+            return;
+          }
+          if (!host.isConnected) mount();
+        }, 500);
+        reportBoot({ event: 'start', force: !!force, mounted: host.isConnected });
         const close = () => {
           if (closed) return;
           closed = true;
           window.clearTimeout(timer);
+          window.clearInterval(remount);
           window.__mbccBootRunning = false;
           window.__mbccBootStage = 'closed';
+          reportBoot({ event: 'closed' });
           host.classList.add('out');
           window.setTimeout(() => host.remove(), 460);
         };
@@ -1524,6 +1639,7 @@ body[data-mbcc-fx='off'] #mbcc-signal { display: none !important; }
           host.dataset.stage = 'log';
           window.__mbccBootStage = 'log';
           bootMarkDone();
+          reportBoot({ event: 'log', videoFailed: !!window.__mbccVideoFailed, err: window.__mbccLastVideoError || '' });
           window.clearTimeout(timer);
           try {
             host.innerHTML = BOOT_HTML;
@@ -1633,6 +1749,7 @@ body[data-mbcc-fx='off'] #mbcc-signal { display: none !important; }
               window.__mbccVideoFailed = true;
               window.__mbccBootStage = 'video-failed';
               console.warn('[MBCC] 开屏视频全部候选都失败，改用日志开屏');
+              reportBoot({ event: 'video-failed', err: window.__mbccLastVideoError || '', src: window.__mbccLastVideoSrc || '' });
               finish();
             } else {
               armWatchdog();
@@ -1642,6 +1759,7 @@ body[data-mbcc-fx='off'] #mbcc-signal { display: none !important; }
             window.clearTimeout(watchdog);
             window.__mbccBootStage = 'video-playing';
             bootMarkDone();
+            reportBoot({ event: 'video-playing', src: window.__mbccLastVideoSrc || '' });
           });
           video.addEventListener('timeupdate', () => {
             try {
@@ -1719,6 +1837,7 @@ body[data-mbcc-fx='off'] #mbcc-signal { display: none !important; }
           videoFailed: !!window.__mbccVideoFailed,
           settingsBoot: (window.__mbccSettings || {}).boot,
           wallVideo: (window.__mbccWallSettings || {}).video,
+          playedForPage: !!window.__mbccBootPlayedForPage,
           doneInSession: (() => {
             try {
               return window.sessionStorage.getItem(BOOT_FLAG);
@@ -1729,6 +1848,11 @@ body[data-mbcc-fx='off'] #mbcc-signal { display: none !important; }
         });
       } catch (e) {
         // 开屏失败不影响主题
+        try {
+          window.__mbccBootRunning = false;
+          window.__mbccBootStage = 'crash';
+          reportBoot({ event: 'crash', err: String((e && e.message) || e) });
+        } catch (e2) {}
       }
     }
 
@@ -3638,7 +3762,8 @@ html[data-mbcc-wall='on'] body[data-mbcc-console='on'] [class*='_centerCol'] [da
         wall = null;
       }
 
-      playBoot();
+      // 等主界面挂载后再放开屏（新版外壳启动更慢，早播会被启动遮罩盖住）
+      scheduleBoot();
       mountBalance(ctx);
       window.__mbccSetAccent = (name) => {
         const acc = ACCENTS[name] ? name : 'red';

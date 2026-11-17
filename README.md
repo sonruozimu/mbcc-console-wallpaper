@@ -61,6 +61,18 @@ dsh plugin add C:\path\to\dsh-theme-mbcc-console-ext-0.2.0.tgz
 
 开屏视频播不出来时，先看 `__mbccBootDebug()` 的 `stage`：`video:...` 说明在试某个地址，`log` 说明已回退到日志开屏，`err` 里会写 `media error <code>`。
 
+每个阶段还会 POST 到宿主的 `/mbcc-console-wall/diag`，落盘在包目录下的 `diag.jsonl`（一行一个 JSON：`start` / `video-playing` / `log` / `closed` / `video-failed` / `crash`，带 `shellWait` 等待主界面的毫秒数）。控制台打不开时直接看这个文件。
+
+## 更新日志
+
+### 0.2.1 — 适配 DSH 0.2.2-rc.1
+
+- **修复开屏在升级后不再播放**：旧实现把「已播过」写进 `sessionStorage`，而它跟着标签页常驻，插件升级 / 宿主升级 / 刷新之后标记还在，开屏被永久拦住。改成只在当前页面生命周期里记账，页面重新加载就一定播一次。
+- 开屏层 `z-index` 提到 `2147483645`，不再被宿主自己的启动遮罩盖住。
+- 开屏改为**等主界面挂载后**再放（探测 sidebar/center 列，最多等 15s），避免视频在新版更慢的启动白屏后面播完。
+- 播放前清掉 DOM 里遗留的同 id 开屏层（旧主题并存时不会叠两层）；overlay 被外壳重渲染摘掉会自动补挂。
+- 新增 `diag.jsonl` 诊断回传，便于无控制台定位。
+
 ## 目录结构
 
 ```
